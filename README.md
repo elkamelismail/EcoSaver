@@ -33,3 +33,8 @@ SECRET_KEY=your_secret_key
 REDIS_URL='redis://127.0.0.1:6379'
 ```
 
+5. Run the server
+
+```powershell
+py .\server.py
+```
