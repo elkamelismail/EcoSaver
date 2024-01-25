@@ -4,6 +4,7 @@ from flask_session import Session
 from flask_cors import CORS, cross_origin
 from config import ApplicationConfig
 from model import db, User
+import geocoder
 
 app = Flask(__name__) # create the Flask app
 app.config.from_object('config.ApplicationConfig') # load the config from config.py
@@ -16,6 +17,10 @@ with app.app_context(): # create the database tables
     db.create_all()
 
 CORS(app, supports_credentials=True) # enable CORS
+
+#-------------------------------------------------------------------
+# Authentication routes  
+#-------------------------------------------------------------------
 
 @app.route('/api/v1/auth/register', methods=['POST'])
 def register():
@@ -36,7 +41,12 @@ def register():
         }), 409
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8') # hash the password
-    new_user = User(first_name=first_name, last_name=last_name, email=email, password=hashed_password) # create the new user
+    new_user = User(
+        first_name=first_name, 
+        last_name=last_name, 
+        email=email, 
+        password=hashed_password
+        ) # create the new user
     db.session.add(new_user) # add the new user to the database
     db.session.commit() # commit the changes
 
@@ -108,6 +118,29 @@ def user():
         "last_name": user.last_name,
         "email": user.email
     })
+
+#-------------------------------------------------------------------
+# Location route
+#-------------------------------------------------------------------
+
+@app.route('/api/v1/location', methods=['GET'])
+def get_locations():
+    """
+    Return the current location of the user
+    """
+    
+    try:
+        g = geocoder.ip('me')
+        return jsonify({
+            "city": g.city,
+            "latitude": g.latlng[0],
+            "longitude": g.latlng[1]
+        })
+    except:
+        return jsonify({
+            "error": "Could not get location"
+        }), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
